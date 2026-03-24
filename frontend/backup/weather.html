@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grime Guys - Weather</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .weather-card {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .weather-temp {
+            font-size: 48px;
+            font-weight: 700;
+        }
+        .weather-condition {
+            font-size: 18px;
+            margin-top: 8px;
+        }
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .forecast-day {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+        }
+        .alert-badge {
+            background: var(--warning);
+            color: var(--primary-dark);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo">🧼 Grime Guys</div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="job-form.html" class="btn">+ New Job</a>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <button class="close-sidebar" id="closeSidebar">✕</button>
+    <a href="index.html">📊 Dashboard</a>
+    <a href="jobs.html">📋 Jobs</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="quotes.html">📄 Quotes</a>
+    <a href="pricing.html">💰 Pricing</a>
+    <a href="clients.html">👥 Clients</a>
+    <a href="expenses.html">💸 Expenses</a>
+    <a href="inventory.html">📦 Inventory</a>
+    <a href="photos.html">📸 Photos</a>
+    <a href="invoices.html">🧾 Invoices</a>
+    <a href="weather.html" class="active">🌤️ Weather</a>
+    <a href="route.html">🗺️ Route</a>
+    <a href="costing.html">💰 Job Costing</a>
+    <a href="social.html">📱 Social</a>
+    <a href="settings.html">⚙️ Settings</a>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html"><span>📊</span><span>Home</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="weather.html" class="active"><span>🌤️</span><span>Weather</span></a>
+    <a href="photos.html"><span>📸</span><span>Photos</span></a>
+    <a href="settings.html"><span>⚙️</span><span>Menu</span></a>
+</div>
+
+<main class="main-content">
+    <div id="weatherAlerts"></div>
+    
+    <div class="weather-card" id="currentWeather">
+        <div class="weather-temp">--°F</div>
+        <div class="weather-condition">Loading weather...</div>
+        <div>Simpsonville, SC</div>
+    </div>
+    
+    <div class="card">
+        <h3>7-Day Forecast</h3>
+        <div class="forecast-grid" id="forecastGrid"></div>
+    </div>
+    
+    <div class="card">
+        <h3>Jobs Affected by Weather</h3>
+        <div id="affectedJobs"></div>
+    </div>
+</main>
+
+<script>
+    // Simulated weather data (in production, use OpenWeatherMap API)
+    function getWeatherData() {
+        return {
+            current: { temp: 68, condition: 'Partly Cloudy', humidity: 65, wind: 8 },
+            forecast: [
+                { day: 'Today', temp: 68, condition: 'Partly Cloudy', precip: 10 },
+                { day: 'Tue', temp: 72, condition: 'Sunny', precip: 0 },
+                { day: 'Wed', temp: 70, condition: 'Cloudy', precip: 20 },
+                { day: 'Thu', temp: 65, condition: 'Rain', precip: 80 },
+                { day: 'Fri', temp: 62, condition: 'Rain', precip: 70 },
+                { day: 'Sat', temp: 66, condition: 'Cloudy', precip: 30 },
+                { day: 'Sun', temp: 69, condition: 'Sunny', precip: 5 }
+            ]
+        };
+    }
+    
+    async function loadWeather() {
+        const weather = getWeatherData();
+        displayCurrentWeather(weather.current);
+        displayForecast(weather.forecast);
+        await checkJobWeather(weather.forecast);
+    }
+    
+    function displayCurrentWeather(current) {
+        const container = document.getElementById('currentWeather');
+        container.innerHTML = `
+            <div class="weather-temp">${current.temp}°F</div>
+            <div class="weather-condition">${current.condition}</div>
+            <div>💧 Humidity: ${current.humidity}% | 💨 Wind: ${current.wind} mph</div>
+            <div>Simpsonville, SC</div>
+        `;
+    }
+    
+    function displayForecast(forecast) {
+        const container = document.getElementById('forecastGrid');
+        container.innerHTML = forecast.map(day => `
+            <div class="forecast-day">
+                <strong>${day.day}</strong><br>
+                ${day.temp}°F<br>
+                ${day.condition}<br>
+                🌧️ ${day.precip}%
+            </div>
+        `).join('');
+    }
+    
+    async function checkJobWeather(forecast) {
+        const res = await fetch('http://localhost:3001/api/jobs?status=Scheduled');
+        const jobs = await res.json();
+        const rainyDays = forecast.filter(f => f.condition.includes('Rain') && f.precip > 50);
+        
+        const affectedJobs = jobs.filter(job => {
+            const jobDate = new Date(job.job_date);
+            const today = new Date();
+            const diffDays = Math.ceil((jobDate - today) / (1000 * 60 * 60 * 24));
+            return rainyDays.some(day => diffDays <= 7 && day.precip > 50);
+        });
+        
+        const alerts = document.getElementById('weatherAlerts');
+        if (rainyDays.length > 0) {
+            alerts.innerHTML = `
+                <div class="alert-badge">
+                    ⚠️ Rain expected in the next ${rainyDays.length} days! Consider rescheduling outdoor jobs.
+                </div>
+            `;
+        }
+        
+        const container = document.getElementById('affectedJobs');
+        if (affectedJobs.length === 0) {
+            container.innerHTML = '<p class="text-center">No scheduled jobs affected by rain this week.</p>';
+            return;
+        }
+        
+        container.innerHTML = affectedJobs.map(job => `
+            <div class="job-card">
+                <div class="job-info">
+                    <div class="job-customer">${job.customer_name}</div>
+                    <div class="job-service">${job.service_type} - ${job.job_date}</div>
+                </div>
+                <div>
+                    <button class="btn-small" onclick="rescheduleJob(${job.id})">Reschedule</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    async function rescheduleJob(id) {
+        const newDate = prompt('Enter new date (YYYY-MM-DD):');
+        if (newDate) {
+            const job = await fetch(`http://localhost:3001/api/jobs/${id}`).then(r => r.json());
+            job.job_date = newDate;
+            await fetch(`http://localhost:3001/api/jobs/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(job)
+            });
+            alert('Job rescheduled!');
+            loadWeather();
+        }
+    }
+    
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+    
+    loadWeather();
+</script>
+</body>
+</html>

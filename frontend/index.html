@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Grime Guys - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo"><img src="logo.png" alt="Grime Guys" class="logo-img"></div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="job-form.html" class="btn">+ New Job</a>
+</div>
+
+<!-- TOP MENU BAR -->
+<div class="top-menu">
+    <div class="top-menu-left">
+        <a href="index.html" class="active">📊 Dashboard</a>
+        <a href="jobs.html">📋 Jobs</a>
+        <a href="calendar.html">📅 Calendar</a>
+        <a href="quotes.html">📄 Quotes</a>
+        <a href="pricing.html">💰 Pricing</a>
+        <a href="clients.html">👥 Clients</a>
+        <a href="expenses.html">💸 Expenses</a>
+        <a href="inventory.html">📦 Inventory</a>
+        <a href="photos.html">📸 Photos</a>
+        <a href="invoices.html">🧾 Invoices</a>
+        <a href="costing.html">💰 Job Costing</a>
+        <a href="social.html">📱 Social</a>
+        <a href="settings.html">⚙️ Settings</a>
+    </div>
+</div>
+
+
+<div class="bottom-nav">
+    <a href="index.html" class="active"><span>📊</span><span>Dashboard</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="calendar.html"><span>📅</span><span>Calendar</span></a>
+    <a href="quotes.html"><span>📄</span><span>Quotes</span></a>
+    <a href="settings.html"><span>⚙️</span><span>Menu</span></a>
+</div>
+
+<main class="main-content">
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div>Revenue</div>
+            <div class="metric-value" id="totalRevenue">$0</div>
+        </div>
+        <div class="metric-card">
+            <div>Expenses</div>
+            <div class="metric-value" id="totalExpenses">$0</div>
+        </div>
+        <div class="metric-card profit">
+            <div>Profit</div>
+            <div class="metric-value" id="totalProfit">$0</div>
+        </div>
+        <div class="metric-card">
+            <div>Jobs Completed</div>
+            <div class="metric-value" id="totalJobs">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Revenue & Profit Trend</h3>
+        <p class="chart-legend">
+            <span style="color: #2c7da0;">● Actual Profit</span> &nbsp;|&nbsp;
+            <span style="color: #f4c542; border-bottom: 2px dashed #f4c542;">--- Potential Revenue</span>
+        </p>
+        <canvas id="revenueChart" height="200"></canvas>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h3>Recent Jobs</h3>
+            <a href="jobs.html" class="btn btn-small">View All</a>
+        </div>
+        <div id="recentJobs"></div>
+    </div>
+</main>
+
+<a href="job-form.html" class="fab">
+    <span>+</span> <span>New Job</span>
+</a>
+
+<script>
+    let currentPeriod = 'month';
+    let revenueChart = null;
+
+    async function loadMetrics() {
+        const res = await fetch(`http://localhost:3001/api/dashboard/metrics?period=${currentPeriod}`);
+        const data = await res.json();
+        document.getElementById('totalRevenue').textContent = '$' + (data.total_revenue || 0).toFixed(2);
+        document.getElementById('totalExpenses').textContent = '$' + (data.total_expenses || 0).toFixed(2);
+        document.getElementById('totalProfit').textContent = '$' + (data.total_profit || 0).toFixed(2);
+        document.getElementById('totalJobs').textContent = data.total_jobs || 0;
+    }
+
+    async function loadTrends() {
+        const actualRes = await fetch(`http://localhost:3001/api/dashboard/trends?period=${currentPeriod}&type=completed`);
+        const actualTrends = await actualRes.json();
+        const potentialRes = await fetch(`http://localhost:3001/api/dashboard/trends?period=${currentPeriod}&type=scheduled`);
+        const potentialTrends = await potentialRes.json();
+        
+        if (revenueChart) revenueChart.destroy();
+        
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const allDates = [...new Set([...actualTrends.map(t => t.date), ...potentialTrends.map(t => t.date)])].sort();
+        
+        revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: allDates,
+                datasets: [
+                    {
+                        label: 'Actual Profit (Completed Jobs)',
+                        data: allDates.map(date => {
+                            const trend = actualTrends.find(t => t.date === date);
+                            return trend ? (trend.profit || trend.revenue || 0) : null;
+                        }),
+                        borderColor: '#2c7da0',
+                        backgroundColor: 'rgba(44, 125, 160, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Potential Revenue (Scheduled Jobs)',
+                        data: allDates.map(date => {
+                            const trend = potentialTrends.find(t => t.date === date);
+                            return trend ? trend.revenue : null;
+                        }),
+                        borderColor: '#f4c542',
+                        backgroundColor: 'rgba(244, 197, 66, 0.05)',
+                        tension: 0.4,
+                        fill: false,
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': $' + (context.parsed.y || 0).toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: { y: { ticks: { callback: v => '$' + v } } }
+            }
+        });
+    }
+
+    async function loadRecentJobs() {
+        const res = await fetch('http://localhost:3001/api/jobs?limit=5');
+        const jobs = await res.json();
+        const container = document.getElementById('recentJobs');
+        if (jobs.length === 0) {
+            container.innerHTML = '<p class="text-center">No jobs yet. Create your first job!</p>';
+            return;
+        }
+        container.innerHTML = jobs.map(job => `
+            <div class="job-card">
+                <div class="job-info">
+                    <div class="job-customer">${job.customer_name}</div>
+                    <div class="job-service">${job.service_type}</div>
+                    <div class="job-service" style="font-size:11px;">${job.job_date || 'No date'}</div>
+                </div>
+                <div class="job-meta">
+                    <div class="job-revenue">Revenue: $${job.revenue || 0}</div>
+                    <div class="job-profit">Profit: $${job.profit || 0}</div>
+                    <div class="status-badge status-${job.status}">${job.status}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+
+    loadMetrics();
+    loadTrends();
+    loadRecentJobs();
+</script>
+</body>
+</html>

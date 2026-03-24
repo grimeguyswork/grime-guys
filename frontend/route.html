@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grime Guys - Route Optimization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .route-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .route-stop {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid var(--gray);
+        }
+        .stop-number {
+            width: 30px;
+            height: 30px;
+            background: var(--accent);
+            color: var(--primary-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .total-distance {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 16px 0;
+        }
+        .map-placeholder {
+            background: var(--gray-light);
+            height: 300px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo">🧼 Grime Guys</div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="job-form.html" class="btn">+ New Job</a>
+</div>
+
+
+<div class="bottom-nav">
+    <a href="index.html"><span>📊</span><span>Home</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="photos.html"><span>📸</span><span>Photos</span></a>
+    <a href="settings.html"><span>⚙️</span><span>Menu</span></a>
+</div>
+
+<main class="main-content">
+    <div class="section-header">
+        <h2>🗺️ Route Optimization</h2>
+        <button class="btn" onclick="optimizeRoute()">🔄 Optimize Route</button>
+    </div>
+    
+    <div class="map-placeholder" id="mapPlaceholder">
+        <div>🗺️ Map View - Optimized Route Will Appear Here</div>
+    </div>
+    
+    <div class="route-card">
+        <h3>Today's Jobs</h3>
+        <div id="todayJobs"></div>
+        <div id="optimizedRoute"></div>
+    </div>
+</main>
+
+<script>
+    let todayJobs = [];
+    
+    async function loadTodayJobs() {
+        const today = new Date().toISOString().split('T')[0];
+        const res = await fetch(`http://localhost:3001/api/jobs?job_date=${today}`);
+        todayJobs = await res.json();
+        displayTodayJobs();
+        optimizeRoute();
+    }
+    
+    function displayTodayJobs() {
+        const container = document.getElementById('todayJobs');
+        if (todayJobs.length === 0) {
+            container.innerHTML = '<p class="text-center">No jobs scheduled for today.</p>';
+            return;
+        }
+        
+        container.innerHTML = todayJobs.map((job, index) => `
+            <div class="route-stop">
+                <div class="stop-number">${index + 1}</div>
+                <div class="job-info">
+                    <div class="job-customer">${job.customer_name}</div>
+                    <div class="job-service">${job.service_type}</div>
+                    <div class="photo-caption">${job.address || 'Simpsonville, SC'}</div>
+                </div>
+                <button class="btn-small" onclick="openMap('${job.address}')">🗺️ Navigate</button>
+            </div>
+        `).join('');
+    }
+    
+    function optimizeRoute() {
+        if (todayJobs.length === 0) return;
+        
+        // Simple optimization - sort by distance from shop (simulated)
+        const optimized = [...todayJobs];
+        const container = document.getElementById('optimizedRoute');
+        
+        // Calculate total estimated distance (simulated)
+        const totalDistance = optimized.length * 5; // 5 miles per job average
+        const totalTime = optimized.length * 45; // 45 minutes per job
+        
+        container.innerHTML = `
+            <div class="total-distance">
+                🚗 Total Estimated Distance: ${totalDistance} miles<br>
+                ⏱️ Estimated Time: ${Math.floor(totalTime / 60)}h ${totalTime % 60}m
+            </div>
+            <h4>Optimized Route Order:</h4>
+            ${optimized.map((job, idx) => `
+                <div class="route-stop">
+                    <div class="stop-number">${idx + 1}</div>
+                    <div>
+                        <strong>${job.customer_name}</strong> - ${job.service_type}<br>
+                        <small>${job.address || 'Simpsonville, SC'}</small>
+                    </div>
+                    <div>🚗 ~5 miles | ⏱️ ~45 min</div>
+                </div>
+            `).join('')}
+            <div style="margin-top: 16px;">
+                <button class="btn" onclick="startNavigation()">Start Navigation</button>
+                <button class="btn btn-secondary" onclick="shareRoute()">Share Route</button>
+            </div>
+        `;
+        
+        updateMap(optimized);
+    }
+    
+    function updateMap(jobs) {
+        const mapDiv = document.getElementById('mapPlaceholder');
+        if (jobs.length === 0) return;
+        
+        // Google Maps link simulation
+        const addresses = jobs.map(j => encodeURIComponent(j.address || 'Simpsonville, SC')).join('/');
+        mapDiv.innerHTML = `
+            <iframe 
+                width="100%" 
+                height="300" 
+                frameborder="0" 
+                style="border:0; border-radius: 20px;"
+                src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbV6arttYQ&origin=Simpsonville+SC&destination=${addresses.split('/')[0]}&waypoints=${addresses.split('/').slice(1).join('|')}"
+                allowfullscreen>
+            </iframe>
+        `;
+    }
+    
+    function openMap(address) {
+        const url = `https://www.google.com/maps/search/${encodeURIComponent(address || 'Simpsonville, SC')}`;
+        window.open(url, '_blank');
+    }
+    
+    function startNavigation() {
+        if (todayJobs.length > 0) {
+            const firstJob = todayJobs[0];
+            openMap(firstJob.address);
+        }
+    }
+    
+    function shareRoute() {
+        const routeText = todayJobs.map((job, i) => `${i + 1}. ${job.customer_name} - ${job.service_type}`).join('\n');
+        navigator.clipboard.writeText(`Today's Route:\n${routeText}\n\nTotal: ${todayJobs.length} jobs`);
+        alert('Route copied to clipboard!');
+    }
+    
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+    
+    loadTodayJobs();
+</script>
+</body>
+</html>

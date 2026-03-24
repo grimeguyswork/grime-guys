@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Grime Guys - Pricing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo">🧼 Grime Guys</div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="job-form.html" class="btn">+ New Job</a>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <button class="close-sidebar" id="closeSidebar">✕</button>
+    <a href="index.html">📊 Dashboard</a>
+    <a href="jobs.html">📋 Jobs</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="quotes.html">📄 Quotes</a>
+    <a href="pricing.html" class="active">💰 Pricing</a>
+    <a href="clients.html">👥 Clients</a>
+    <a href="expenses.html">💸 Expenses</a>
+    <a href="inventory.html">📦 Inventory</a>
+    <a href="photos.html">📸 Photos</a>
+    <a href="invoices.html">🧾 Invoices</a>
+    <a href="weather.html">🌤️ Weather</a>
+    <a href="route.html">🗺️ Route</a>
+    <a href="costing.html">💰 Job Costing</a>
+    <a href="social.html">📱 Social</a>
+    <a href="settings.html">⚙️ Settings</a>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html"><span>📊</span><span>Dashboard</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="calendar.html"><span>📅</span><span>Calendar</span></a>
+    <a href="quotes.html"><span>📄</span><span>Quotes</span></a>
+    <a href="settings.html"><span>⚙️</span><span>Menu</span></a>
+</div>
+
+<main class="main-content">
+    <div id="pricingList"></div>
+
+    <div class="card" id="insights">
+        <h3>📊 Business Insights</h3>
+        <div id="insightsContent">Loading...</div>
+    </div>
+</main>
+
+<script>
+    async function loadPricing() {
+        const res = await fetch('http://localhost:3001/api/pricing');
+        const pricing = await res.json();
+        const container = document.getElementById('pricingList');
+        container.innerHTML = pricing.map(p => `
+            <div class="card">
+                <h3>${p.service_type}</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Min Price ($)</label>
+                        <input type="number" id="min_${p.service_type}" value="${p.min_price || 0}" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Price ($)</label>
+                        <input type="number" id="max_${p.service_type}" value="${p.max_price || 0}" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Avg Price ($)</label>
+                        <input type="number" id="avg_${p.service_type}" value="${p.avg_price || 0}" step="10">
+                    </div>
+                </div>
+                <button class="btn btn-small" onclick="savePricing('${p.service_type}')">Save</button>
+            </div>
+        `).join('');
+    }
+
+    async function savePricing(service_type) {
+        const min = parseFloat(document.getElementById(`min_${service_type}`).value);
+        const max = parseFloat(document.getElementById(`max_${service_type}`).value);
+        const avg = parseFloat(document.getElementById(`avg_${service_type}`).value);
+        await fetch(`http://localhost:3001/api/pricing/${service_type}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ min_price: min, max_price: max, avg_price: avg })
+        });
+        alert('Pricing saved');
+        loadInsights();
+    }
+
+    async function loadInsights() {
+        const res = await fetch('http://localhost:3001/api/insights');
+        const data = await res.json();
+        const container = document.getElementById('insightsContent');
+        if (!data.stats) {
+            container.innerHTML = '<p>No data yet. Complete some jobs to see insights.</p>';
+            return;
+        }
+        container.innerHTML = `
+            <div class="form-row">
+                <div class="metric-card" style="padding:12px;">
+                    <div>Average Job Value</div>
+                    <div class="metric-value">$${(data.stats.avg_job_value || 0).toFixed(2)}</div>
+                </div>
+                <div class="metric-card" style="padding:12px;">
+                    <div>Total Jobs</div>
+                    <div class="metric-value">${data.stats.total_jobs || 0}</div>
+                </div>
+                <div class="metric-card" style="padding:12px;">
+                    <div>Total Revenue</div>
+                    <div class="metric-value">$${(data.stats.total_revenue || 0).toFixed(2)}</div>
+                </div>
+                <div class="metric-card" style="padding:12px;">
+                    <div>Total Profit</div>
+                    <div class="metric-value profit">$${(data.stats.total_profit || 0).toFixed(2)}</div>
+                </div>
+            </div>
+            <h4 style="margin-top:16px;">Most Profitable Service:</h4>
+            <p><strong>${data.mostProfitableService?.service_type || 'N/A'}</strong> - Avg Profit: $${(data.mostProfitableService?.avg_profit || 0).toFixed(2)}</p>
+            <h4 style="margin-top:16px;">Service Breakdown:</h4>
+            <div class="form-row">
+                ${data.services?.map(s => `
+                    <div class="metric-card" style="padding:12px;">
+                        <div>${s.service_type}</div>
+                        <div class="metric-value">$${s.avg_revenue?.toFixed(2) || 0}</div>
+                        <div style="font-size:12px;">${s.count} jobs</div>
+                    </div>
+                `).join('') || '<p>No service data yet</p>'}
+            </div>
+        `;
+    }
+
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+
+    loadPricing();
+    loadInsights();
+</script>
+</body>
+</html>

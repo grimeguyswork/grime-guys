@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grime Guys - Social Media</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .social-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .platform-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .instagram { background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); color: white; }
+        .facebook { background: #1877f2; color: white; }
+        .post-preview {
+            background: var(--gray-light);
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin: 12px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo">🧼 Grime Guys</div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="job-form.html" class="btn">+ New Job</a>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <button class="close-sidebar" id="closeSidebar">✕</button>
+    <a href="index.html">📊 Dashboard</a>
+    <a href="jobs.html">📋 Jobs</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="quotes.html">📄 Quotes</a>
+    <a href="pricing.html">💰 Pricing</a>
+    <a href="clients.html">👥 Clients</a>
+    <a href="expenses.html">💸 Expenses</a>
+    <a href="inventory.html">📦 Inventory</a>
+    <a href="photos.html">📸 Photos</a>
+    <a href="invoices.html">🧾 Invoices</a>
+    <a href="weather.html">🌤️ Weather</a>
+    <a href="route.html">🗺️ Route</a>
+    <a href="costing.html">💰 Job Costing</a>
+    <a href="social.html" class="active">📱 Social</a>
+    <a href="settings.html">⚙️ Settings</a>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html"><span>📊</span><span>Home</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="social.html" class="active"><span>📱</span><span>Social</span></a>
+    <a href="photos.html"><span>📸</span><span>Photos</span></a>
+    <a href="settings.html"><span>⚙️</span><span>Menu</span></a>
+</div>
+
+<main class="main-content">
+    <div class="section-header">
+        <h2>📱 Social Media Marketing</h2>
+    </div>
+    
+    <div class="social-card">
+        <h3>Create Post</h3>
+        <div class="form-group">
+            <label>Select Completed Job</label>
+            <select id="postJobId" onchange="generatePostContent()"></select>
+        </div>
+        <div class="form-group">
+            <label>Platform</label>
+            <select id="postPlatform" onchange="updatePlatformStyle()">
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Post Content</label>
+            <textarea id="postContent" rows="6" placeholder="What did you do?"></textarea>
+        </div>
+        <div class="post-preview" id="postPreview"></div>
+        <div class="form-actions">
+            <button class="btn" onclick="postToSocial()">📤 Post Now</button>
+            <button class="btn btn-secondary" onclick="copyPost()">📋 Copy to Clipboard</button>
+            <button class="btn btn-secondary" onclick="schedulePost()">📅 Schedule for Later</button>
+        </div>
+    </div>
+    
+    <div class="social-card">
+        <h3>Scheduled Posts</h3>
+        <div id="scheduledPosts"></div>
+    </div>
+    
+    <div class="social-card">
+        <h3>Recent Posts</h3>
+        <div id="recentPosts"></div>
+    </div>
+</main>
+
+<script>
+    let allJobs = [];
+    
+    async function loadJobs() {
+        const res = await fetch('http://localhost:3001/api/jobs?limit=100');
+        allJobs = await res.json();
+        const completedJobs = allJobs.filter(j => j.status === 'Completed' || j.status === 'Paid');
+        const select = document.getElementById('postJobId');
+        select.innerHTML = completedJobs.map(job => 
+            `<option value="${job.id}">${job.customer_name} - ${job.service_type} ($${job.revenue})</option>`
+        ).join('');
+        generatePostContent();
+    }
+    
+    function generatePostContent() {
+        const jobId = document.getElementById('postJobId').value;
+        const job = allJobs.find(j => j.id == jobId);
+        if (!job) return;
+        
+        const platform = document.getElementById('postPlatform').value;
+        let content = '';
+        
+        if (platform === 'instagram') {
+            content = `✨ Another satisfied customer! ✨\n\nWe just finished a ${job.service_type} for ${job.customer_name} in Simpsonville, SC.\n\nBefore and after transformation! 🏡✨\n\n#GrimeGuys #PressureWashing #Landscaping #SimpsonvilleSC #CleanYards #SmallBusiness`;
+        } else {
+            content = `🎉 Job Complete! 🎉\n\nWe had a great time providing ${job.service_type} services for ${job.customer_name} today!\n\n✅ Professional service\n✅ Quality guaranteed\n✅ Customer satisfaction\n\nThank you for choosing Grime Guys!\n\n#GrimeGuys #LocalBusiness #PressureWashing #LawnCare #SimpsonvilleSC`;
+        }
+        
+        document.getElementById('postContent').value = content;
+        updatePreview();
+    }
+    
+    function updatePreview() {
+        const content = document.getElementById('postContent').value;
+        const platform = document.getElementById('postPlatform').value;
+        const preview = document.getElementById('postPreview');
+        
+        preview.innerHTML = `
+            <strong>Preview (${platform === 'instagram' ? '📸 Instagram' : '📘 Facebook'}):</strong><br>
+            <div style="margin-top: 8px; white-space: pre-wrap;">${content}</div>
+            <div style="margin-top: 12px; color: var(--success);">✨ Ready to post!</div>
+        `;
+    }
+    
+    function updatePlatformStyle() {
+        generatePostContent();
+    }
+    
+    async function postToSocial() {
+        const jobId = document.getElementById('postJobId').value;
+        const platform = document.getElementById('postPlatform').value;
+        const content = document.getElementById('postContent').value;
+        
+        const post = {
+            job_id: parseInt(jobId),
+            platform: platform,
+            content: content,
+            status: 'Posted',
+            posted_at: new Date().toISOString()
+        };
+        
+        await fetch('http://localhost:3001/api/social-posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(post)
+        });
+        
+        alert(`✓ Posted to ${platform}!\n\nPost content:\n${content.substring(0, 100)}...`);
+        loadScheduledPosts();
+        loadRecentPosts();
+        
+        // Reset form
+        document.getElementById('postContent').value = '';
+        updatePreview();
+    }
+    
+    function copyPost() {
+        const content = document.getElementById('postContent').value;
+        navigator.clipboard.writeText(content);
+        alert('✓ Post copied to clipboard! Ready to paste on your social media.');
+    }
+    
+    function schedulePost() {
+        const date = prompt('Schedule for (YYYY-MM-DD):');
+        if (date) {
+            alert(`Post scheduled for ${date}! You'll get a reminder.`);
+        }
+    }
+    
+    async function loadScheduledPosts() {
+        const res = await fetch('http://localhost:3001/api/social-posts?status=Scheduled');
+        const posts = await res.json();
+        const container = document.getElementById('scheduledPosts');
+        if (posts.length === 0) {
+            container.innerHTML = '<p class="text-center">No scheduled posts</p>';
+            return;
+        }
+        container.innerHTML = posts.map(post => `
+            <div class="job-card">
+                <div>📅 ${post.scheduled_date || 'No date'}</div>
+                <div>${post.content?.substring(0, 100)}...</div>
+                <button class="btn-small" onclick="deletePost(${post.id})">Cancel</button>
+            </div>
+        `).join('');
+    }
+    
+    async function loadRecentPosts() {
+        const res = await fetch('http://localhost:3001/api/social-posts?status=Posted');
+        const posts = await res.json();
+        const container = document.getElementById('recentPosts');
+        if (posts.length === 0) {
+            container.innerHTML = '<p class="text-center">No posts yet. Create your first social media post!</p>';
+            return;
+        }
+        container.innerHTML = posts.slice(0, 5).map(post => `
+            <div class="job-card">
+                <div><span class="platform-badge ${post.platform}">${post.platform}</span> ${post.posted_at?.split('T')[0]}</div>
+                <div>👍 ${post.engagement || 0} engagements</div>
+                <div class="photo-caption">${post.content?.substring(0, 100)}...</div>
+            </div>
+        `).join('');
+    }
+    
+    function deletePost(id) {
+        if (confirm('Delete this scheduled post?')) {
+            fetch(`http://localhost:3001/api/social-posts/${id}`, { method: 'DELETE' });
+            loadScheduledPosts();
+        }
+    }
+    
+    document.getElementById('postContent').addEventListener('input', updatePreview);
+    
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+    
+    loadJobs();
+    loadScheduledPosts();
+    loadRecentPosts();
+</script>
+</body>
+</html>

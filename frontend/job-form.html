@@ -1,0 +1,321 @@
+k<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Grime Guys - Add/Edit Job</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .photo-upload {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .photo-preview {
+            max-width: 100%;
+            max-height: 150px;
+            margin-top: 8px;
+            border-radius: 8px;
+        }
+        .map-link {
+            display: inline-block;
+            margin-top: 8px;
+            color: #99bb43;
+            text-decoration: none;
+        }
+        .recurring-options {
+            margin-top: 8px;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo"><img src="logo.png" alt="Grime Guys" class="logo-img"></div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="jobs.html" class="btn">Cancel</a>
+</div>
+
+
+<div class="bottom-nav">
+    <a href="index.html">📊<span>Home</span></a>
+    <a href="jobs.html">📋<span>Jobs</span></a>
+    <a href="calendar.html">📅<span>Calendar</span></a>
+    <a href="quotes.html">📄<span>Quotes</span></a>
+    <a href="settings.html">⚙️<span>Menu</span></a>
+</div>
+
+<main class="main-content">
+    <div class="card">
+        <h2 id="formTitle">Add Job</h2>
+        <form id="jobForm">
+            <div class="form-group">
+                <label>Customer Name *</label>
+                <input type="text" id="customerName" required>
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="text" id="phone">
+            </div>
+            <div class="form-group">
+                <label>Address *</label>
+                <input type="text" id="address" required>
+                <a href="#" id="mapLink" class="map-link" target="_blank">📍 Open in Google Maps</a>
+            </div>
+            <div class="form-group">
+                <label>Service Type</label>
+                <select id="serviceType" onchange="suggestPrice()">
+                    <option value="Mowing">Mowing</option>
+                    <option value="Pressure Washing">Pressure Washing</option>
+                    <option value="Leaf Blowing">Leaf Blowing</option>
+                    <option value="Bush Trimming">Bush Trimming</option>
+                    <option value="Trailer Rental (4x6)">Trailer Rental (4x6)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Service Details</label>
+                <textarea id="serviceDetails" rows="2" placeholder="What specific work was done?"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Job Date</label>
+                <input type="date" id="jobDate">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Revenue ($)</label>
+                    <input type="number" id="revenue" step="0.01" value="0" oninput="updateProfit()">
+                </div>
+                <div class="form-group">
+                    <label>Expenses ($)</label>
+                    <input type="number" id="expenses" step="0.01" value="0" oninput="updateProfit()">
+                </div>
+            </div>
+            <div class="profit-preview" style="background:#f0f0f0; padding:12px; border-radius:8px; text-align:center; margin:12px 0;">
+                <strong>Profit: $<span id="profitPreview">0</span></strong>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="status">
+                    <option value="Quote">Quote</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Paid">Paid</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Payment Method</label>
+                <select id="paymentMethod">
+                    <option value="">Not Paid Yet</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="Venmo">Venmo</option>
+                    <option value="CashApp">CashApp</option>
+                </select>
+            </div>
+            
+            <!-- Recurring Jobs Section -->
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="isRecurring" onchange="toggleRecurring()"> 
+                    Recurring Job
+                </label>
+                <div id="recurringOptions" class="recurring-options" style="display:none;">
+                    <label>Frequency:</label>
+                    <select id="recurringFrequency">
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Bi-Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Photo Upload Section -->
+            <div class="form-group">
+                <label>Before Photo</label>
+                <div class="photo-upload" onclick="document.getElementById('beforePhotoInput').click()">
+                    📸 Click to upload before photo
+                </div>
+                <input type="file" id="beforePhotoInput" accept="image/*" style="display:none" onchange="previewPhoto('before')">
+                <img id="beforePreview" class="photo-preview" style="display:none">
+            </div>
+            
+            <div class="form-group">
+                <label>After Photo</label>
+                <div class="photo-upload" onclick="document.getElementById('afterPhotoInput').click()">
+                    📸 Click to upload after photo
+                </div>
+                <input type="file" id="afterPhotoInput" accept="image/*" style="display:none" onchange="previewPhoto('after')">
+                <img id="afterPreview" class="photo-preview" style="display:none">
+            </div>
+            
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea id="notes" rows="3"></textarea>
+            </div>
+            
+            <button type="submit" class="btn" style="width:100%;">Save Job</button>
+        </form>
+    </div>
+</main>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const jobId = urlParams.get('id');
+    let editMode = false;
+    let beforePhotoData = null;
+    let afterPhotoData = null;
+
+    if (jobId) {
+        editMode = true;
+        document.getElementById('formTitle').textContent = 'Edit Job';
+        loadJob(jobId);
+    } else {
+        document.getElementById('jobDate').value = new Date().toISOString().split('T')[0];
+    }
+
+    function updateProfit() {
+        const revenue = parseFloat(document.getElementById('revenue').value) || 0;
+        const expenses = parseFloat(document.getElementById('expenses').value) || 0;
+        document.getElementById('profitPreview').textContent = (revenue - expenses).toFixed(2);
+    }
+
+    function toggleRecurring() {
+        const isChecked = document.getElementById('isRecurring').checked;
+        document.getElementById('recurringOptions').style.display = isChecked ? 'block' : 'none';
+    }
+
+    function previewPhoto(type) {
+        const input = document.getElementById(`${type}PhotoInput`);
+        const preview = document.getElementById(`${type}Preview`);
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                if (type === 'before') beforePhotoData = e.target.result;
+                else afterPhotoData = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function updateMapLink() {
+        const address = document.getElementById('address').value;
+        const mapLink = document.getElementById('mapLink');
+        if (address) {
+            mapLink.href = `https://www.google.com/maps/search/${encodeURIComponent(address)}`;
+            mapLink.style.display = 'inline-block';
+        } else {
+            mapLink.style.display = 'none';
+        }
+    }
+
+    async function suggestPrice() {
+        const service = document.getElementById('serviceType').value;
+        const revenueInput = document.getElementById('revenue');
+        if (!revenueInput.value || revenueInput.value === '0') {
+            const res = await fetch(`http://localhost:3001/api/pricing/suggest/${encodeURIComponent(service)}`);
+            const data = await res.json();
+            if (data.suggested > 0) {
+                revenueInput.value = data.suggested;
+                updateProfit();
+            }
+        }
+    }
+
+    async function loadJob(id) {
+        const res = await fetch(`http://localhost:3001/api/jobs/${id}`);
+        const job = await res.json();
+        document.getElementById('customerName').value = job.customer_name || '';
+        document.getElementById('phone').value = job.phone || '';
+        document.getElementById('address').value = job.address || '';
+        document.getElementById('serviceType').value = job.service_type || 'Mowing';
+        document.getElementById('serviceDetails').value = job.service_details || '';
+        document.getElementById('jobDate').value = job.job_date || '';
+        document.getElementById('revenue').value = job.revenue || 0;
+        document.getElementById('expenses').value = job.expenses || 0;
+        document.getElementById('status').value = job.status || 'Quote';
+        document.getElementById('paymentMethod').value = job.payment_method || '';
+        document.getElementById('notes').value = job.notes || '';
+        if (job.is_recurring) {
+            document.getElementById('isRecurring').checked = true;
+            document.getElementById('recurringFrequency').value = job.recurring_frequency || 'weekly';
+            toggleRecurring();
+        }
+        if (job.before_photo) {
+            document.getElementById('beforePreview').src = job.before_photo;
+            document.getElementById('beforePreview').style.display = 'block';
+        }
+        if (job.after_photo) {
+            document.getElementById('afterPreview').src = job.after_photo;
+            document.getElementById('afterPreview').style.display = 'block';
+        }
+        updateProfit();
+        updateMapLink();
+    }
+
+    document.getElementById('jobForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const jobData = {
+            customer_name: document.getElementById('customerName').value,
+            phone: document.getElementById('phone').value,
+            address: document.getElementById('address').value,
+            service_type: document.getElementById('serviceType').value,
+            service_details: document.getElementById('serviceDetails').value,
+            job_date: document.getElementById('jobDate').value,
+            revenue: parseFloat(document.getElementById('revenue').value) || 0,
+            expenses: parseFloat(document.getElementById('expenses').value) || 0,
+            notes: document.getElementById('notes').value,
+            status: document.getElementById('status').value,
+            payment_method: document.getElementById('paymentMethod').value,
+            is_recurring: document.getElementById('isRecurring').checked ? 1 : 0,
+            recurring_frequency: document.getElementById('recurringFrequency').value,
+            before_photo: beforePhotoData,
+            after_photo: afterPhotoData
+        };
+
+        const url = editMode ? `http://localhost:3001/api/jobs/${jobId}` : 'http://localhost:3001/api/jobs';
+        const method = editMode ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jobData)
+            });
+            
+            if (response.ok) {
+                window.location.href = 'jobs.html';
+            } else {
+                const result = await response.json();
+                alert('Error saving job: ' + result.error);
+            }
+        } catch (err) {
+            console.error('Save error:', err);
+            alert('Error saving job. Check console for details.');
+        }
+    });
+
+    document.getElementById('address').addEventListener('input', updateMapLink);
+
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+</script>
+</body>
+</html>

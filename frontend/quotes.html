@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Grime Guys - Quotes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .message-preview {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            font-size: 14px;
+            margin: 16px 0;
+        }
+        .btn-copy {
+            background: #99bb43;
+            color: #17542a;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        .button-group .btn {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo"><img src="logo.png" alt="Grime Guys" class="logo-img"></div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="job-form.html" class="btn">+ New Job</a>
+</div>
+
+<div class="top-menu">
+    <div class="top-menu-left">
+        <a href="index.html">📊 Dashboard</a>
+        <a href="jobs.html">📋 Jobs</a>
+        <a href="calendar.html">📅 Calendar</a>
+        <a href="quotes.html" class="active">📄 Quotes</a>
+        <a href="pricing.html">💰 Pricing</a>
+        <a href="clients.html">👥 Clients</a>
+        <a href="expenses.html">💸 Expenses</a>
+        <a href="inventory.html">📦 Inventory</a>
+        <a href="photos.html">📸 Photos</a>
+        <a href="invoices.html">🧾 Invoices</a>
+        <a href="costing.html">💰 Job Costing</a>
+        <a href="social.html">📱 Social</a>
+        <a href="settings.html">⚙️ Settings</a>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html"><span>📊</span><span>Dashboard</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="calendar.html"><span>📅</span><span>Calendar</span></a>
+    <a href="quotes.html" class="active"><span>📄</span><span>Quotes</span></a>
+    <a href="settings.html"><span>⚙️</span><span>Menu</span></a>
+</div>
+
+<main class="main-content">
+    <div class="card">
+        <h2>📄 Generate Quote</h2>
+        <form id="quoteForm">
+            <div class="form-group">
+                <label>Customer Name *</label>
+                <input type="text" id="quoteCustomer" required placeholder="John Smith">
+            </div>
+            <div class="form-group">
+                <label>Address *</label>
+                <input type="text" id="quoteAddress" required placeholder="123 Main St">
+            </div>
+            <div class="form-group">
+                <label>Service</label>
+                <select id="quoteService">
+                    <option value="Mowing">Mowing</option>
+                    <option value="Pressure Washing">Pressure Washing</option>
+                    <option value="Leaf Blowing">Leaf Blowing</option>
+                    <option value="Bush Trimming">Bush Trimming</option>
+                    <option value="Mulching">Mulching</option>
+                    <option value="Ice Removal">Ice Removal</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Price ($)</label>
+                <input type="number" id="quotePrice" step="0.01" required placeholder="0.00">
+            </div>
+            <button type="submit" class="btn" style="width:100%;">Generate Quote</button>
+        </form>
+    </div>
+
+    <div class="card" id="quoteOutput" style="display:none;">
+        <h3>📋 Professional Quote</h3>
+        <div style="background: #f0e9cd; padding: 20px; border-radius: 12px;">
+            <h3 style="color:#17542a;">Grime Guys</h3>
+            <p>Exterior Cleaning Services</p>
+            <hr style="margin: 10px 0;">
+            <p><strong>Customer:</strong> <span id="outCustomer"></span></p>
+            <p><strong>Address:</strong> <span id="outAddress"></span></p>
+            <p><strong>Service:</strong> <span id="outService"></span></p>
+            <p><strong>Total:</strong> $<span id="outPrice"></span></p>
+            <p style="margin-top:16px;"><strong>Contact:</strong> (864) 704-6341 | grimeguyswork@gmail.com</p>
+            <p>Serving Simpsonville, Fountain Inn, and surrounding areas</p>
+        </div>
+    </div>
+
+    <div class="card" id="messageSection" style="display:none;">
+        <h3>📱 Text Message Preview</h3>
+        <div class="message-preview" id="fullMessagePreview"></div>
+        <div class="button-group">
+            <button class="btn btn-copy" id="copyFullBtn">📋 Copy Text Message</button>
+            <button class="btn btn-secondary" id="copyShortBtn">⚡ Copy Short Version</button>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: #999; padding: 8px; background: #f8f9fa; border-radius: 8px;">
+            <strong>Short version:</strong>
+            <div id="shortMessagePreview" style="margin-top: 4px;"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+    let currentQuoteData = null;
+
+    function generateFullMessage(data) {
+        return `Hi ${data.customerName}, here's your quote from Grime Guys:
+
+${data.service} – $${data.total}
+
+Property Address: ${data.address}
+
+If everything looks good, just let me know and I'll get you scheduled. I have availability coming up soon.
+
+– Grime Guys
+(864) 704-6341`;
+    }
+
+    function generateShortMessage(data) {
+        return `Hey ${data.customerName}, your quote is $${data.total} for ${data.service} at ${data.address}. Let me know if you want me to get you scheduled. – Grime Guys`;
+    }
+
+    function updateMessages(data) {
+        document.getElementById('fullMessagePreview').textContent = generateFullMessage(data);
+        document.getElementById('shortMessagePreview').textContent = generateShortMessage(data);
+        currentQuoteData = data;
+    }
+
+    async function copyFullMessage() {
+        if (!currentQuoteData) return alert('Generate a quote first');
+        await navigator.clipboard.writeText(generateFullMessage(currentQuoteData));
+        alert('✓ Text message copied! Ready to paste into iMessage/SMS.');
+    }
+
+    async function copyShortMessage() {
+        if (!currentQuoteData) return alert('Generate a quote first');
+        await navigator.clipboard.writeText(generateShortMessage(currentQuoteData));
+        alert('✓ Short version copied!');
+    }
+
+    document.getElementById('quoteForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = {
+            customerName: document.getElementById('quoteCustomer').value,
+            address: document.getElementById('quoteAddress').value,
+            service: document.getElementById('quoteService').value,
+            total: parseFloat(document.getElementById('quotePrice').value).toFixed(2)
+        };
+        
+        document.getElementById('outCustomer').innerText = data.customerName;
+        document.getElementById('outAddress').innerText = data.address;
+        document.getElementById('outService').innerText = data.service;
+        document.getElementById('outPrice').innerText = data.total;
+        
+        document.getElementById('quoteOutput').style.display = 'block';
+        updateMessages(data);
+        document.getElementById('messageSection').style.display = 'block';
+    });
+
+    document.getElementById('copyFullBtn').addEventListener('click', copyFullMessage);
+    document.getElementById('copyShortBtn').addEventListener('click', copyShortMessage);
+
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+</script>
+</body>
+</html>

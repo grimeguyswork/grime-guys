@@ -1,0 +1,54 @@
+<!-- Shared Navigation Menu -->
+<div class="sidebar" id="sidebar">
+    <button class="close-sidebar" id="closeSidebar">✕</button>
+    <a href="index.html">📊 Dashboard</a>
+    <a href="jobs.html">📋 Jobs</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="quotes.html">📄 Quotes</a>
+    <a href="pricing.html">💰 Pricing</a>
+    <a href="clients.html">👥 Clients</a>
+    <a href="expenses.html">💸 Expenses</a>
+    <a href="inventory.html">📦 Inventory</a>
+    <a href="photos.html">📸 Photos</a>
+    <a href="invoices.html">🧾 Invoices</a>
+    <a href="weather.html">🌤️ Weather</a>
+    <a href="route.html">🗺️ Route</a>
+    <a href="costing.html">💰 Job Costing</a>
+    <a href="social.html">📱 Social</a>
+    <a href="settings.html">⚙️ Settings</a>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html"><span>📊</span><span>Home</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="calendar.html"><span>📅</span><span>Calendar</span></a>
+    <a href="quotes.html"><span>📄</span><span>Quotes</span></a>
+    <a href="settings.html"><span>⚙️</span><span>Menu</span></a>
+</div>
+
+<script>
+    // Shared menu toggle functionality
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+    
+    // Highlight current page in sidebar
+    const currentPage = window.location.pathname.split('/').pop();
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        if (link.getAttribute('href') === currentPage) {
+            link.classList.add('active');
+        }
+    });
+    document.querySelectorAll('.bottom-nav a').forEach(link => {
+        if (link.getAttribute('href') === currentPage) {
+            link.classList.add('active');
+        }
+    });
+</script>

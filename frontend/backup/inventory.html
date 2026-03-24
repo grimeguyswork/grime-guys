@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grime Guys - Inventory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .inventory-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: var(--transition);
+        }
+        .inventory-card.low-stock {
+            border-left: 4px solid var(--warning);
+        }
+        .inventory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .inventory-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .quantity-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .quantity-good { background: var(--success); color: white; }
+        .quantity-low { background: var(--warning); color: white; }
+        .quantity-critical { background: var(--danger); color: white; }
+        .progress-bar {
+            height: 8px;
+            background: var(--gray);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo">🧼 Grime Guys</div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="job-form.html" class="btn">+ New Job</a>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <button class="close-sidebar" id="closeSidebar">✕</button>
+    <a href="index.html">📊 Dashboard</a>
+    <a href="jobs.html">📋 Jobs</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="quotes.html">📄 Quotes</a>
+    <a href="pricing.html">💰 Pricing</a>
+    <a href="clients.html">👥 Clients</a>
+    <a href="expenses.html">💸 Expenses</a>
+    <a href="inventory.html" class="active">📦 Inventory</a>
+    <a href="photos.html">📸 Photos</a>
+    <a href="invoices.html">🧾 Invoices</a>
+    <a href="weather.html">🌤️ Weather</a>
+    <a href="settings.html">⚙️ Settings</a>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html"><span>📊</span><span>Home</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="calendar.html"><span>📅</span><span>Calendar</span></a>
+    <a href="quotes.html"><span>📄</span><span>Quotes</span></a>
+    <a href="inventory.html" class="active"><span>📦</span><span>Inventory</span></a>
+</div>
+
+<main class="main-content">
+    <div class="section-header">
+        <h2>📦 Inventory Management</h2>
+        <button class="btn" onclick="showAddItemModal()">+ Add Item</button>
+    </div>
+    
+    <div id="inventoryList"></div>
+</main>
+
+<div id="itemModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3 id="modalTitle">Add Inventory Item</h3>
+        <form id="itemForm">
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" id="itemName" required>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="itemCategory">
+                    <option value="Fuel">Fuel</option>
+                    <option value="Materials">Materials</option>
+                    <option value="Supplies">Supplies</option>
+                    <option value="Equipment">Equipment</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" id="itemQuantity" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Unit</label>
+                    <input type="text" id="itemUnit" placeholder="gallons, bags, etc">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Min Quantity Alert</label>
+                    <input type="number" id="itemMinQuantity" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Price per Unit ($)</label>
+                    <input type="number" id="itemPrice" step="0.01">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">Save</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    async function loadInventory() {
+        const res = await fetch('http://localhost:3001/api/inventory');
+        const items = await res.json();
+        displayInventory(items);
+    }
+    
+    function displayInventory(items) {
+        const container = document.getElementById('inventoryList');
+        if (items.length === 0) {
+            container.innerHTML = '<div class="card"><p class="text-center">No inventory items. Add your first item!</p></div>';
+            return;
+        }
+        
+        container.innerHTML = items.map(item => {
+            const percentage = (item.quantity / item.min_quantity) * 100;
+            let statusClass = 'quantity-good';
+            let statusText = 'Good Stock';
+            
+            if (item.quantity <= item.min_quantity) {
+                statusClass = 'quantity-low';
+                statusText = 'Low Stock - Reorder Soon';
+            }
+            if (item.quantity <= item.min_quantity / 2) {
+                statusClass = 'quantity-critical';
+                statusText = 'Critical - Reorder Now';
+            }
+            
+            return `
+                <div class="inventory-card ${item.quantity <= item.min_quantity ? 'low-stock' : ''}">
+                    <div class="inventory-header">
+                        <span class="inventory-name">${item.name}</span>
+                        <span class="quantity-indicator ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${Math.min(percentage, 100)}%"></div>
+                    </div>
+                    <div class="form-row">
+                        <div><strong>Quantity:</strong> ${item.quantity} ${item.unit}</div>
+                        <div><strong>Min Alert:</strong> ${item.min_quantity} ${item.unit}</div>
+                        <div><strong>Price/Unit:</strong> $${item.price_per_unit || 0}</div>
+                    </div>
+                    <div class="form-row" style="margin-top: 12px;">
+                        <button class="btn-small" onclick="updateQuantity(${item.id})">Update Quantity</button>
+                        <button class="btn-small btn-danger" onclick="deleteItem(${item.id})">Delete</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    async function updateQuantity(id) {
+        const newQty = prompt('Enter new quantity:');
+        if (newQty !== null) {
+            await fetch(`http://localhost:3001/api/inventory/${id}/quantity`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: parseFloat(newQty) })
+            });
+            loadInventory();
+        }
+    }
+    
+    async function deleteItem(id) {
+        if (confirm('Delete this item?')) {
+            await fetch(`http://localhost:3001/api/inventory/${id}`, { method: 'DELETE' });
+            loadInventory();
+        }
+    }
+    
+    function showAddItemModal() {
+        document.getElementById('modalTitle').textContent = 'Add Inventory Item';
+        document.getElementById('itemForm').reset();
+        document.getElementById('itemModal').style.display = 'flex';
+    }
+    
+    document.getElementById('itemForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const item = {
+            name: document.getElementById('itemName').value,
+            category: document.getElementById('itemCategory').value,
+            quantity: parseFloat(document.getElementById('itemQuantity').value),
+            unit: document.getElementById('itemUnit').value,
+            min_quantity: parseFloat(document.getElementById('itemMinQuantity').value) || 0,
+            price_per_unit: parseFloat(document.getElementById('itemPrice').value) || 0
+        };
+        
+        await fetch('http://localhost:3001/api/inventory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        });
+        
+        closeModal();
+        loadInventory();
+    });
+    
+    function closeModal() {
+        document.getElementById('itemModal').style.display = 'none';
+    }
+    
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+    
+    loadInventory();
+</script>
+</body>
+</html>

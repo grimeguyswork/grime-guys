@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grime Guys - Job Costing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .cost-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .cost-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+        .cost-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .profit-positive { color: var(--success); }
+        .profit-negative { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="logo">🧼 Grime Guys</div>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <a href="job-form.html" class="btn">+ New Job</a>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <button class="close-sidebar" id="closeSidebar">✕</button>
+    <a href="index.html">📊 Dashboard</a>
+    <a href="jobs.html">📋 Jobs</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="quotes.html">📄 Quotes</a>
+    <a href="pricing.html">💰 Pricing</a>
+    <a href="clients.html">👥 Clients</a>
+    <a href="expenses.html">💸 Expenses</a>
+    <a href="inventory.html">📦 Inventory</a>
+    <a href="photos.html">📸 Photos</a>
+    <a href="invoices.html">🧾 Invoices</a>
+    <a href="weather.html">🌤️ Weather</a>
+    <a href="route.html">🗺️ Route</a>
+    <a href="costing.html" class="active">💰 Job Costing</a>
+    <a href="social.html">📱 Social</a>
+    <a href="settings.html">⚙️ Settings</a>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html"><span>📊</span><span>Home</span></a>
+    <a href="jobs.html"><span>📋</span><span>Jobs</span></a>
+    <a href="costing.html" class="active"><span>💰</span><span>Costing</span></a>
+    <a href="photos.html"><span>📸</span><span>Photos</span></a>
+    <a href="settings.html"><span>⚙️</span><span>Menu</span></a>
+</div>
+
+<main class="main-content">
+    <div class="section-header">
+        <h2>💰 Job Costing & Profit Analysis</h2>
+    </div>
+    
+    <div class="cost-summary" id="costSummary"></div>
+    
+    <div class="card">
+        <h3>Job Cost Breakdown</h3>
+        <div id="jobsCostingList"></div>
+    </div>
+</main>
+
+<div id="costModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3>Edit Job Costs</h3>
+        <form id="costForm">
+            <div class="form-group">
+                <label>Labor Hours</label>
+                <input type="number" id="laborHours" step="0.5">
+            </div>
+            <div class="form-group">
+                <label>Labor Cost ($)</label>
+                <input type="number" id="laborCost" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Material Cost ($)</label>
+                <input type="number" id="materialCost" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Equipment Cost ($)</label>
+                <input type="number" id="equipmentCost" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Fuel Cost ($)</label>
+                <input type="number" id="fuelCost" step="0.01">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">Save Costs</button>
+                <button type="button" class="btn btn-secondary" onclick="closeCostModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentJobId = null;
+    let allJobs = [];
+    
+    async function loadJobsWithCosts() {
+        const res = await fetch('http://localhost:3001/api/jobs?limit=100');
+        allJobs = await res.json();
+        displayCostSummary();
+        displayJobsCosting();
+    }
+    
+    function displayCostSummary() {
+        const completedJobs = allJobs.filter(j => j.status === 'Completed' || j.status === 'Paid');
+        const totalRevenue = completedJobs.reduce((sum, j) => sum + (j.revenue || 0), 0);
+        const totalProfit = completedJobs.reduce((sum, j) => sum + (j.profit || 0), 0);
+        const avgProfit = completedJobs.length ? totalProfit / completedJobs.length : 0;
+        const profitMargin = totalRevenue ? (totalProfit / totalRevenue * 100) : 0;
+        
+        document.getElementById('costSummary').innerHTML = `
+            <div class="cost-card">
+                <div>Total Revenue</div>
+                <div class="cost-value">$${totalRevenue.toFixed(2)}</div>
+            </div>
+            <div class="cost-card">
+                <div>Total Profit</div>
+                <div class="cost-value profit-positive">$${totalProfit.toFixed(2)}</div>
+            </div>
+            <div class="cost-card">
+                <div>Avg Profit/Job</div>
+                <div class="cost-value">$${avgProfit.toFixed(2)}</div>
+            </div>
+            <div class="cost-card">
+                <div>Profit Margin</div>
+                <div class="cost-value">${profitMargin.toFixed(1)}%</div>
+            </div>
+        `;
+    }
+    
+    function displayJobsCosting() {
+        const container = document.getElementById('jobsCostingList');
+        container.innerHTML = allJobs.map(job => `
+            <div class="job-card">
+                <div class="job-info">
+                    <div class="job-customer">${job.customer_name}</div>
+                    <div class="job-service">${job.service_type}</div>
+                    <div class="photo-caption">Revenue: $${job.revenue || 0} | Profit: $${job.profit || 0}</div>
+                </div>
+                <div>
+                    <button class="btn-small" onclick="editCosts(${job.id})">Edit Costs</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    async function editCosts(jobId) {
+        currentJobId = jobId;
+        const res = await fetch(`http://localhost:3001/api/job-costs/${jobId}`);
+        const costs = await res.json();
+        
+        document.getElementById('laborHours').value = costs.labor_hours || 0;
+        document.getElementById('laborCost').value = costs.labor_cost || 0;
+        document.getElementById('materialCost').value = costs.material_cost || 0;
+        document.getElementById('equipmentCost').value = costs.equipment_cost || 0;
+        document.getElementById('fuelCost').value = costs.fuel_cost || 0;
+        
+        document.getElementById('costModal').style.display = 'flex';
+    }
+    
+    document.getElementById('costForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const costData = {
+            job_id: currentJobId,
+            labor_hours: parseFloat(document.getElementById('laborHours').value) || 0,
+            labor_cost: parseFloat(document.getElementById('laborCost').value) || 0,
+            material_cost: parseFloat(document.getElementById('materialCost').value) || 0,
+            equipment_cost: parseFloat(document.getElementById('equipmentCost').value) || 0,
+            fuel_cost: parseFloat(document.getElementById('fuelCost').value) || 0
+        };
+        
+        costData.total_cost = costData.labor_cost + costData.material_cost + costData.equipment_cost + costData.fuel_cost;
+        
+        await fetch('http://localhost:3001/api/job-costs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(costData)
+        });
+        
+        closeCostModal();
+        loadJobsWithCosts();
+    });
+    
+    function closeCostModal() {
+        document.getElementById('costModal').style.display = 'none';
+    }
+    
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => sidebar.classList.add('open'));
+    }
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    }
+    
+    loadJobsWithCosts();
+</script>
+</body>
+</html>

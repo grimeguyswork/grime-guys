@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Grime Guys - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #0a2e1a 0%, #1e6b3b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .login-box h1 {
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #0a2e1a, #1e6b3b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #1a2a1f;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #f4c542;
+            box-shadow: 0 0 0 3px rgba(244, 197, 66, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #f4c542 0%, #e6b422 100%);
+            color: #0a2e1a;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(244, 197, 66, 0.3);
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .demo-note {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div style="text-align:center;"><img src="logo.png" alt="Grime Guys" style="height:48px;"></div>
+            
+            <div id="error" class="error-message"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="grimeguyswork@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Password">
+                </div>
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+            
+            <div class="demo-note">
+                Authorized access only
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ALLOWED_EMAIL = 'grimeguyswork@gmail.com';
+        const ALLOWED_PASSWORD = 'F00tb@ll#1';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error');
+            
+            errorDiv.style.display = 'none';
+            
+            if (!email || !password) {
+                errorDiv.textContent = 'Please enter email and password';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Check credentials
+            if (email !== ALLOWED_EMAIL || password !== ALLOWED_PASSWORD) {
+                errorDiv.textContent = 'Invalid email or password';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Try to login with backend
+            try {
+                const res = await fetch('http://localhost:3001/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = 'index.html';
+                } else {
+                    // If backend doesn't have user, still allow login
+                    localStorage.setItem('user', JSON.stringify({ email: email, id: Date.now() }));
+                    window.location.href = 'index.html';
+                }
+            } catch (err) {
+                // If backend is not running, still allow login
+                localStorage.setItem('user', JSON.stringify({ email: email, id: Date.now() }));
+                window.location.href = 'index.html';
+            }
+        });
+        
+        // Check if already logged in
+        if (localStorage.getItem('user')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
