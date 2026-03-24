@@ -3,7 +3,10 @@ services:
     name: grime-guys-backend
     runtime: node
     plan: free
-    buildCommand: cd backend && npm install
+    buildCommand: |
+      cd backend
+      npm install
+      npm rebuild sqlite3
     startCommand: cd backend && node server.js
     envVars:
       - key: NODE_ENV
