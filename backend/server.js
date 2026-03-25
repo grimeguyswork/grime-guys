@@ -361,4 +361,3 @@ app.listen(PORT, () => {
     console.log(`✅ Grime Guys Server running on http://localhost:${PORT}`);
     console.log(`📊 All features loaded: Inventory, Photos, Invoices, Costing, Social`);
 });
-EOF
