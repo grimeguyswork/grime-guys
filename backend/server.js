@@ -1,11 +1,3 @@
-            res.json({ id: this.lastID });
-cd "/Users/landonduvall/Desktop/coding projects/grime-guys-simple/backend"
-
-# Backup your current server.js
-cp server.js server.js.backup
-
-# Create new server.js with better-sqlite3
-cat > server.js << 'EOF'
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
@@ -18,7 +10,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Create database
+// Create database - this will create the file if it doesn't exist
 const db = new Database('./database.db');
 
 // Business Profile
@@ -41,7 +33,7 @@ const SERVICES = [
     { id: 'trailer_rental', name: 'Trailer Rental (4x6)', description: 'Small trailer rental for hauling' }
 ];
 
-// Create all tables - using exec() for multiple statements
+// Create all tables using exec() for multiple statements
 db.exec(`
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
