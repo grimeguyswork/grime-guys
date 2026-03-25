@@ -3,16 +3,10 @@ services:
     name: grime-guys-backend
     runtime: node
     plan: free
-    buildCommand: |
-      cd backend
-      rm -rf node_modules package-lock.json
-      npm install
-      npm rebuild sqlite3 --build-from-source
+    buildCommand: cd backend && npm install
     startCommand: cd backend && node server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3001
-      - key: npm_config_build_from_source
-        value: true
